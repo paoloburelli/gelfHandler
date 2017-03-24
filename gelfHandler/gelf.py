@@ -41,7 +41,7 @@ class GelfHandler(logging.Handler):
         self.facility = kw.get('facility', None)
         self.from_host = kw.get('from_host', getfqdn())
         self.tls = kw.get('tls', False)
-        self.cafile = kw.get('cafile', False)
+        self.cafile = kw.get('cafile', None)
         self.application = kw.get('application', None)
         if self.protocol.lower() == 'udp':
             self._connect_udp_socket()
