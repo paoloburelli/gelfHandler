@@ -11,6 +11,7 @@ class GelfHandler(logging.Handler):
     Author: Stewart Rutledge <stew.rutledge AT gmail.com>
     License: BSD
     """
+
     def __init__(self, protocol='UDP', host='localhost', port=None, **kw):
         """
         Simple
@@ -21,13 +22,15 @@ class GelfHandler(logging.Handler):
         :param facility: Logging facility [Default: None]
         :param from_host: Host name in the log message [Default: FQDN]
         :param tls: Use a tls connection [Default: False]
+        :param cafile: Certificate to use for tls connection [Default: None]
         :type protocol str
         :type host: str
         :type port: int
         :type full_info: bool
         :type facility: str
         :type from_host: str
-        :type tl: bool
+        :type tls: bool
+        :type cafile: str
         """
         if not protocol.lower() in ['tcp', 'udp']:
             raise ValueError('Protocol must be either TCP or UDP')
@@ -38,6 +41,7 @@ class GelfHandler(logging.Handler):
         self.facility = kw.get('facility', None)
         self.from_host = kw.get('from_host', getfqdn())
         self.tls = kw.get('tls', False)
+        self.cafile = kw.get('cafile', False)
         self.application = kw.get('application', None)
         if self.protocol.lower() == 'udp':
             self._connect_udp_socket()
@@ -55,7 +59,9 @@ class GelfHandler(logging.Handler):
             self.port = 12201
         self.sock = socket(AF_INET, SOCK_STREAM)
         if self.tls:
-            self.sock = ssl.wrap_socket(self.sock, ssl_version=ssl.PROTOCOL_TLSv1, cert_reqs=ssl.CERT_NONE)
+            self.sock = ssl.wrap_socket(self.sock, ssl_version=ssl.PROTOCOL_TLSv1,
+                                        cert_reqs=ssl.CERT_NONE if self.cafile is None else ssl.CERT_REQUIRED,
+                                        ca_certs=self.cafile)
         try:
             self.sock.connect((self.host, int(self.port)))
         except IOError as e:
@@ -70,9 +76,9 @@ class GelfHandler(logging.Handler):
             'CRITICAL': 9
         }
         try:
-            return(levelsDict[level])
+            return (levelsDict[level])
         except:
-            raise('Could not determine level number')
+            raise ('Could not determine level number')
 
     def _build_message(self, record, **kwargs):
         record_dict = record.__dict__
